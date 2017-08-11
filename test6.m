@@ -1,17 +1,17 @@
 clear ;clc ;close all ;
 % 二值化
-img=imread('11.jpg');
+img = imread('2.jpg');
 [h,w,n] = size(img);
-hsv=rgb2hsv(img);  % 转hsv
-s=hsv(:,:,2);      % s分量
-bw=1-im2bw(s,graythresh(s)); % 二值化
-se=strel('disk',10);
-bw2=imclose(bw,se);
-bw3=bwareaopen(bw2,500);
+hsv = rgb2hsv(img);  % 转hsv
+s = hsv(:,:,2);      % s分量
+bw = ~im2bw(s,graythresh(s)); % 二值化
+se = strel('disk',10);
+bw2 = imclose(bw,se);
+bw3 = bwareaopen(bw2,500);
 
 % 求边缘
-bbw3=double(bw3);
-bwedge=edge(bbw3);
+bbw3 = double(bw3);
+bwedge = edge(bbw3);
 indexedge = find(bwedge ~= 0);
 [rowedge,coledge] = ind2sub(size(bwedge),indexedge);
 Yedge = rowedge';
@@ -64,7 +64,6 @@ for i = 1:lenbw4
 end
 indexend = find(endpox~=0); % 非零索引
 indexint = find(intpox~=0);
-
 % 交点、端点去重
 thr = 5; %判断距离的阈值
 for i = 1: length(indexend)-1 % 至少两个端点
@@ -98,7 +97,7 @@ indexint = find(intpox~=0);
 lonend = length(indexend);
 lonint = length(indexint);
 % 将非零点集中到前端
-for i = 1:length(indexint)
+for i = 1:lonint
     if(indexint(i)~=i)
         intpox(i) = intpox(indexint(i)) ;
         intpoy(i) = intpoy(indexint(i)) ;
@@ -106,7 +105,9 @@ for i = 1:length(indexint)
         intpoy(indexint(i)) = 0;
     end
 end
-for i = 1:length(indexend)
+intpox = intpox(1:length(indexint));
+intpoy = intpoy(1:length(indexint));
+for i = 1:lonend
     if(indexend(i)~=i)
         endpox(i) = intpox(indexend(i)) ;
         endpoy(i) = intpoy(indexend(i)) ;
@@ -114,16 +115,8 @@ for i = 1:length(indexend)
         endpoy(indexend(i)) = 0;
     end
 end
-
-% max = -inf ;
-% for i = length(indexend)
-%     d = sqrt((Xcenter-endpox(i)).^2 + (Ycenter-endpoy(i)).^2);
-%     if(max < d)
-%         max = d ;
-%         maxx = endpox(i);
-%         maxy = endpoy(i);
-%     end
-% end
+endpox = endpox(1:length(indexend));
+endpoy = endpoy(1:length(indexend));
 
 hold on
 plot(endpox,endpoy,'.','markersize',20);
@@ -131,7 +124,7 @@ plot(intpox,intpoy,'*','markersize',10);
 
 
 % 把检测到的交点背景化
-for i = 1:length(indexint)
+for i = 1:lonint
     bw4(intpoy(i)-1:intpoy(i)+1,intpox(i)-1:intpox(i)+1) = 0;
 end
 [Map,num] = bwlabel(bw4,8);
@@ -141,20 +134,31 @@ end
 % imshow(showimg2),title('分支离散化、求长度')
 
 % 标记各交叉点、端点
-XIntMark = zeros(3,length(indexint));
-for i = 1:length(indexint)
+% 点编号
+% X坐标
+% Y坐标
+% 附加属性
+XIntMark = zeros(6,lonint);
+XIntMark(2,:) = intpox;
+XIntMark(3,:) = intpoy;
+for i = 1:lonint
+    XIntMark(1,i) = i;
     Rect = Map(intpoy(i)-2:intpoy(i)+2,intpox(i)-2:intpox(i)+2);
     temp= unique(Rect);
-    XIntMark(:,i) = temp(2:4,1);
+    XIntMark(4:6,i) = temp(2:4,1);
 end
-XEndMark = zeros(1,length(indexend));
-for i = 1:length(indexend)
+XEndMark = zeros(4,lonend);
+XEndMark(2,:) = endpox;
+XEndMark(3,:) = endpoy;
+for i = 1:lonend
+    XEndMark(1,i) = i;
     Rect = Map(endpoy(i)-2:endpoy(i)+2,endpox(i)-2:endpox(i)+2);
     temp= unique(Rect);
-    XEndMark = temp(2,1);
+    XEndMark(4,i) = temp(2,1);
 end
 
 % 计算各分支长度
+LineMark = zeros(2,num);
 maxcont = -inf ;
 flag = 0;
 Cont = zeros(1,num);
@@ -163,6 +167,8 @@ for k = 1:num
         for j = 1:w
             if(Map(i,j)==k)
                 Cont(k) = Cont(k) + 1;
+                LineMark(1,k) = k;
+                LineMark(2,k) = Cont(k);
             end
         end
     end
@@ -182,10 +188,10 @@ for i = 1:h
         end
     end
 end
-% figure
-% showimg3 = bwedge;
-% showimg3(endbw) = 1;
-% imshow(showimg3),title('保留最长的尾部')
+figure
+showimg3 = bwedge;
+showimg3(endbw) = 1;
+imshow(showimg3),title('保留最长的尾部')
 
 % 对尾部图像检测端点
 indexendbw = find(endbw ~= 0); % 非零点坐标索引
@@ -194,46 +200,36 @@ Yend = rowend';
 Xend = colend';
 lenend = length(Xend);
 % 端点坐标
-weiendpox = zeros(1,2);
-weiendpoy = zeros(1,2);
+weiendpo = zeros(2,2);
 j = 1;
 for i = 1:lenend
     Rect = endbw((Yend(i)-1):(Yend(i)+1),(Xend(i)-1):(Xend(i)+1)); % 3X3矩形
     SumRect = sum(sum(Rect)) ; % 3X3对矩形求和
     if(SumRect == 2) % 端点条件
-        weiendpox(j) = Xend(i);
-        weiendpoy(j) = Yend(i);
+        weiendpo(1,j) = Xend(i);
+        weiendpo(2,j) = Yend(i);
         j = j + 1;
     end
 end
-% hold on
-% plot(weiendpox,weiendpoy,'*','markersize',10);
-Xran = abs(weiendpox(1)-weiendpox(2));
-Yran = abs(weiendpoy(1)-weiendpoy(2));
+Xran = abs(weiendpo(1,1)-weiendpo(1,2));
+Yran = abs(weiendpo(2,1)-weiendpo(2,2));
 if(Xran>Yran)
     Dre = 'horizontal';
 else
     Dre = 'vertical';
 end
 
-% 求尾端起点
-max = -inf;
-for i = 1:lenend
-    d = sqrt((Xcenter-Xend(i)).^2 + (Ycenter-Yend(i)).^2);
-    if(max < d)
-        max = d ;
-        xend = Xend(i);
-        yend = Yend(i);
+rec = zeros(2,2);
+j = 1;
+for i = 1:lonint
+    if(any(XIntMark(4:6,i)==flag))
+        rec(1,j) = XIntMark(2,i);
+        rec(2,j) = XIntMark(3,i);
+        j = j + 1;
     end
 end
-% hold on
-% plot(Xcenter,Ycenter,'.','markersize',40);
-% plot(xend,yend,'.','markersize',20);
-% line([Xcenter,xend],[Ycenter,yend])
-
-
-
 Rr = zeros(1,lenend);
+
 % 求尾部内切圆
 for i = 1:lenend
     min = inf;
@@ -245,27 +241,31 @@ for i = 1:lenend
     end
     Rr(i) = min;
 end
-% % 绘制尾部内切圆
-% figure
-% imshow(bwedge),title('内切圆');
-% hold on
-% alpha=0:pi/20:2*pi;
-% for o = 1:lenend
-%     x=Xend(o) + Rr(o)*cos(alpha);
-%     y=Yend(o) + Rr(o)*sin(alpha);
-%     plot(x,y,'.')
-%     fill(x,y,'r');
-% end
+% 绘制尾部内切圆
+figure
+imshow(bwedge),title('内切圆');
+hold on
+alpha=0:pi/20:2*pi;
+for o = 1:lenend
+    x=Xend(o) + Rr(o)*cos(alpha);
+    y=Yend(o) + Rr(o)*sin(alpha);
+    plot(x,y,'.')
+    fill(x,y,'r');
+end
 
-% % 绘制半径函数
-% figure('NumberTitle', 'off', 'Name', '骨线上内切圆半径');
-% if strcmp(Dre,'horizontal')
-%     o = 1:lenend;
-%     plot(Xend(o),Rr(o),'.')
-%     xlabel('X'),ylabel('R'),title('尾部骨线上内切圆半径');
-% end
-% if strcmp(Dre,'vertical')
-%     o = 1:lenend;
-%     plot(Yend(o),Rr(o),'.')
-%     xlabel('Y'),ylabel('R'),title('尾部骨线上内切圆半径');
-% end
+% 绘制半径函数
+figure('NumberTitle', 'off', 'Name', '骨线上内切圆半径');
+if strcmp(Dre,'horizontal')
+    o = 1:lenend;
+    plot(Xend(o),Rr(o),'.')
+    xlabel('X'),ylabel('R'),title('尾部骨线上内切圆半径');
+end
+if strcmp(Dre,'vertical')
+    o = 1:lenend;
+    plot(Yend(o),Rr(o),'.')
+    xlabel('Y'),ylabel('R'),title('尾部骨线上内切圆半径');
+end
+
+
+
+
