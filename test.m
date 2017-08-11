@@ -1,6 +1,6 @@
 clear ;clc ;close all ;
 % 二值化
-img=imread('4.jpg');
+img=imread('12.jpg');
 [h,w,n] = size(img);
 hsv=rgb2hsv(img);  % 转hsv
 s=hsv(:,:,2);      % s分量
@@ -98,11 +98,24 @@ end
 
 % 细化去支
 bw5 = xihuaquzhi(bw4,Dre);
-
+se=strel('disk',3);
+showbw=imdilate(bw5,se); 
+r=img(:,:,1);
+g=img(:,:,2);
+b=img(:,:,3);
+r(showbw)=255;
+g(showbw)=0;
+b(showbw)=0;
+img(:,:,1)=r;
+img(:,:,2)=g;
+img(:,:,3)=b;
+figure
+imshow(img)
+% 
 % 显示结果
 showbw4 = bwedge;
 showbw5 = bwedge;
-figure(1)
+figure
 showbw4(bw4) = 1;
 showbw5(bw5) = 1;
 subplot(121),imshow(showbw4),title('细化去支前');
@@ -111,37 +124,29 @@ hold on
 plot(Xcenter,Ycenter,'.');
 line([Xcenter,lonx],[Ycenter,lony]);
 line([x1,x2],[y1,y2]);
-
-% if(strcmp(Dre,'vd&up')||strcmp(Dre,'vd&down'))
-%     line([Xcenter,Xcenter],[Ycenter,Ycon]);
-% end
-% if(strcmp(Dre,'hd&left')||strcmp(Dre,'hd&right'))
-%      line([Xcenter,Xcon],[Ycenter,Ycenter]);
-% end
-
-
-% figure(2)
-% subplot(221),imshow(bw),title('二值化');
-% subplot(222),imshow(bw2),title('闭操作');
-% subplot(223),imshow(bw3),title('去孤岛');
-% subplot(224),imshow(bw4),title('骨架细化');
-%
-figure(3)
+% 
+% % if(strcmp(Dre,'vd&up')||strcmp(Dre,'vd&down'))
+% %     line([Xcenter,Xcenter],[Ycenter,Ycon]);
+% % end
+% % if(strcmp(Dre,'hd&left')||strcmp(Dre,'hd&right'))
+% %      line([Xcenter,Xcon],[Ycenter,Ycenter]);
+% % end
+% 
+% 
+% % figure(2)
+% % subplot(221),imshow(bw),title('二值化');
+% % subplot(222),imshow(bw2),title('闭操作');
+% % subplot(223),imshow(bw3),title('去孤岛');
+% % subplot(224),imshow(bw4),title('骨架细化');
+% %
+figure
 % bw3(bw5)=0;
 imshow(bw3),title('骨线上内切圆变化');
 % % c对应水平位置、r对应垂直位置
 indexbw = find(bw5 ~= 0);
 [rowbw,colbw] = ind2sub(size(bw5),indexbw);
-if((strcmp(Dre,'hd&right')||strcmp(Dre,'hd&left')) && lony>Ycenter)
-    Ybw = fliplr(rowbw');
-    Xbw = fliplr(colbw');
-elseif((strcmp(Dre,'vd&up')||strcmp(Dre,'vd&down')) && lonx>Xcenter)
-    Ybw = fliplr(rowbw');
-    Xbw = fliplr(colbw');
-else
-    Ybw = rowbw';
-    Xbw = colbw';
-end
+Ybw = rowbw';
+Xbw = colbw';
 lenbw = length(Xbw);
 Rr = zeros(1,lenbw);
 
