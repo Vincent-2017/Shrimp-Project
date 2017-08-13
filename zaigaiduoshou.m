@@ -449,20 +449,42 @@ for alpha=0:pi/90:2*pi;
     end
 end
 
+% 求整体骨线上最大半径和位置
+Rr = zeros(1,lenquzhi);
+for o = 1:lenquzhi
+    minn = inf;
+    for i = 1:lenedge      
+        d = sqrt((Xquzhi(o)-Xedge(i)).^2 + (Yquzhi(o)-Yedge(i)).^2);
+        if(minn > d)
+            minn = d;
+        end
+    end
+    Rr(o) = minn;
+end
+indexRr = find(Rr==max(Rr));
+BanX = Xquzhi(indexRr);
+BanY = Yquzhi(indexRr);
+MaxR = Rr(indexRr);
+
 figure
-% r = img(:,:,1);
-% g = img(:,:,2);
-% b = img(:,:,3);
-% r(quzhibw) = 255;
-% g(quzhibw) = 0;
-% b(quzhibw) = 0;
-% img(:,:,1) = r ;
-% img(:,:,2) = g ;
-% img(:,:,3) = b ;
+r = img(:,:,1);
+g = img(:,:,2);
+b = img(:,:,3);
+r(quzhibw) = 255;
+g(quzhibw) = 0;
+b(quzhibw) = 0;
+img(:,:,1) = r ;
+img(:,:,2) = g ;
+img(:,:,3) = b ;
 imshow(img);
 hold on
 plot(xc,yc,'*','markersize',20,'color','r'); % 绘制尾翅位置
-plot(xc2,yc2,'*','markersize',20,'color','r'); % 绘制最后一关节位置
+plot(xc2,yc2,'*','markersize',20,'color','g'); % 绘制最后一关节位置
+plot(BanX,BanY,'*','markersize',20,'color','b'); % 绘制最大圆圆心
+alpha=0:pi/20:2*pi;
+x = BanX + MaxR*cos(alpha);
+y = BanY + MaxR*sin(alpha);
+plot(x,y,'.','color','b')
 % %多项式拟合
 % n=3;
 % if(strcmp(Dre,'up')||strcmp(Dre,'down'))
@@ -475,26 +497,26 @@ plot(xc2,yc2,'*','markersize',20,'color','r'); % 绘制最后一关节位置
 %     y1=polyval(A,1:h);  %计算出拟合的y值
 %     plot(1:h,y1,'r-');
 % end
-% 设出圆锥曲线方程
-F=@(p,x)p(1)*x(:,1).^2+p(2)*x(:,1).*x(:,2)+p(3)*x(:,2).^2+p(4);
-% 离散数据点
-x = zeros(length(Xquzhi),2);
-x(:,1) = Xquzhi';
-x(:,2) = Yquzhi';
-p0=[1 1 1 1];
-warning off
-% 拟合系数，最小二乘方法
-p=nlinfit(x,zeros(size(x,1),1),F,p0);
-plot(x(:,1),x(:,2),'ro');
-hold on;
-xmin=min(x(:,1));
-xmax=max(x(:,1));
-ymin=min(x(:,2));
-ymax=max(x(:,2));
-% 作图
-ezplot(@(x,y)F(p,[x,y]),[-1+xmin,1+xmax,-1+ymin,1+ymax]);
-title('曲线拟合');
-legend('样本点','拟合曲线')
+% % 设出圆锥曲线方程
+% F=@(p,x)p(1)*x(:,1).^2+p(2)*x(:,1).*x(:,2)+p(3)*x(:,2).^2+p(4);
+% % 离散数据点
+% x = zeros(length(Xquzhi),2);
+% x(:,1) = Xquzhi';
+% x(:,2) = Yquzhi';
+% p0=[1 1 1 1];
+% warning off
+% % 拟合系数，最小二乘方法
+% p=nlinfit(x,zeros(size(x,1),1),F,p0);
+% plot(x(:,1),x(:,2),'ro');
+% hold on;
+% xmin=min(x(:,1));
+% xmax=max(x(:,1));
+% ymin=min(x(:,2));
+% ymax=max(x(:,2));
+% % 作图
+% ezplot(@(x,y)F(p,[x,y]),[-1+xmin,1+xmax,-1+ymin,1+ymax]);
+% title('曲线拟合');
+% legend('样本点','拟合曲线')
 
 
 
